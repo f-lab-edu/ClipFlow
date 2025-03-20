@@ -77,13 +77,21 @@ public class AuthService {
                 String.class
         );
 
+        System.out.println("네이버 응답: " + response.getBody()); // 응답을 로그로 출력, 디버깅용 코드
+        
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 // JSON 응답을 Jackson의 JsonNode로 변환 후, access_token 가져오기
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
-                return jsonNode.get("access_token").asText(); // 액세스 토큰 반환
+                JsonNode accessTokenNode = jsonNode.get("access_token");
+
+                if (accessTokenNode == null) { // access_token이 없을 경우 예외 발생 방지
+                    throw new RuntimeException("네이버 응답에 access_token이 없음: " + response.getBody());
+                }
+
+                return accessTokenNode.asText(); // 액세스 토큰 반환
             } catch (Exception e) {
-                throw new RuntimeException("JSON 파싱 오류", e);
+                throw new RuntimeException("JSON 파싱 오류:" + response.getBody(), e);
             }
         } else {
             throw new RuntimeException("네이버 액세스 토큰 요청 실패: " + response.getStatusCode());
